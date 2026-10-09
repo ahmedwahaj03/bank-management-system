@@ -30,31 +30,16 @@ VALUES ('Hassan Ahmed', '03221234567', 'hassan@example.com', 'Karachi');
 INSERT INTO accounts (customer_id, account_number, account_type, balance)
 VALUES (3, 'PK00100003', 'Savings', 10000.00);
 
--- 5. Deposit money and record the transaction
-START TRANSACTION;
+-- 5. Deposit funds atomically (updates balance and inserts history)
+CALL deposit_funds(1, 5000.00);
 
-UPDATE accounts
-SET balance = balance + 5000.00
-WHERE account_id = 1;
+-- 6. Withdraw funds atomically.
+-- If funds are insufficient or the account does not exist, the procedure
+-- raises an error and rolls back without inserting transaction history.
+CALL withdraw_funds(1, 2000.00);
 
-INSERT INTO transactions (account_id, transaction_type, amount, description)
-VALUES (1, 'Deposit', 5000.00, 'Cash deposit');
-
-COMMIT;
-
--- 6. Withdraw money safely
-START TRANSACTION;
-
-UPDATE accounts
-SET balance = balance - 2000.00
-WHERE account_id = 1
-  AND balance >= 2000.00;
-
--- Check affected rows before committing in a real application.
-INSERT INTO transactions (account_id, transaction_type, amount, description)
-VALUES (1, 'Withdrawal', 2000.00, 'Cash withdrawal');
-
-COMMIT;
+-- Optional failure test (run separately): this must fail without changing data.
+-- CALL withdraw_funds(1, 99999999.00);
 
 -- 7. Transaction history
 SELECT
